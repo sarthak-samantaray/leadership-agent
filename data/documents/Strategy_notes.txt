@@ -1,0 +1,46 @@
+Adobe Leadership Agent — RAG POC: Strategy Notes
+==================================================
+Last updated: POC scaffold. Align retrieval questions with these themes when evaluating answers.
+
+1. North-star outcome
+---------------------
+- Deliver grounded, executive-style answers that combine internal filings and analyst-style materials with optional web verification.
+- Default stance: cite sources (document + page where available); flag uncertainty when context is thin.
+
+2. Product pillars (what “good” looks like)
+--------------------------------------------
+- Grounding: Answers should trace to retrieved chunks, not generic software-industry boilerplate.
+- Leadership lens: Frame insights in terms of priorities, trade-offs, risks, and execution—not only raw numbers.
+- Actionability: Where possible, end with implications for decisions (portfolio, roadmap, compliance narrative), not just facts.
+
+3. Retrieval strategy (POC)
+----------------------------
+- Primary: Vector search over ingested PDFs and text notes in data/documents/.
+- Diversity: Use MMR (or equivalent) so one long filing does not dominate all chunks for broad questions.
+- Optional rerank: When enabled, cross-encoder reranking should lift the most on-topic passages for the exact user query.
+- Web: Use as supplement for recency or external facts; keep internal citations primary when the question is about Adobe disclosures.
+
+4. Content scope for this corpus
+---------------------------------
+- Annual narrative and 10-K/10-Q: financial performance, segment commentary, risk factors, MD&A themes.
+- Quarterly earnings materials: management tone, KPIs, guidance signals, Q&A themes.
+- Investor presentations: strategic bets (e.g., Creative Cloud, Document Cloud, Digital Experience), platform and ecosystem.
+- These Strategy_notes.txt and Operational_tasks.txt: POC operating model and evaluation focus—useful for smoke tests and guardrail tuning.
+
+5. Risk and compliance posture (POC level)
+-------------------------------------------
+- Guardrails: Rule-based fast path + LLM classification for off-topic or unsafe requests.
+- Do not treat this assistant as legal, tax, or investment advice; strategy here is product positioning, not compliance sign-off.
+- For production: add audit logs, retention policy, and explicit data classification for each document source.
+
+6. Evaluation themes for demos
+-------------------------------
+- Factuality vs filings: Does the answer match revenue, segment names, and risk language from sources?
+- Attribution: Are sources referenced in a way a user can verify (page, section, or clear quote)?
+- Executive tone: Is the answer concise, structured, and free of hallucinated numbers?
+
+7. Open strategic questions (for iterative RAG tuning)
+------------------------------------------------------
+- How to weight recency (latest 10-Q) vs completeness (10-K risk section) for mixed questions?
+- When should the system refuse to answer vs answer with partial context and explicit caveats?
+- What chunk size and overlap best preserve tables and multi-line risk-factor paragraphs for this corpus?

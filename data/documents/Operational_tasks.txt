@@ -1,0 +1,46 @@
+Adobe Leadership Agent — RAG POC: Operational Tasks
+===================================================
+Use this as a checklist for running and evaluating the POC. Tick items in your own tracker; this file is ingested for RAG smoke tests.
+
+A. Data and index
+-----------------
+- Place PDFs and .txt notes under data/documents/.
+- Run: python ingest.py (or project equivalent) after adding or replacing files.
+- Confirm vectorstore_db/ updates and note approximate document count in your run log.
+- Spot-check: run one narrow retrieval question that should hit a specific filing or note.
+
+B. Configuration
+----------------
+- Set API keys via .env and/or leadership_agent_config.json (Gemini; optional Tavily, Cohere, Langfuse).
+- Verify web_search and cohere rerank toggles match the scenario you are demoing (internal-only vs web-augmented).
+
+C. Application entrypoints
+--------------------------
+- CLI: python main.py — suitable for scripted tests and CI-style runs.
+- UI: streamlit run streamlit_app.py — suitable for stakeholder demos (HTML report, preview).
+
+D. Quality checks (each release or dataset change)
+--------------------------------------------------
+- Golden questions: Maintain 5–10 questions with expected source types (10-K risk, quarterly KPI, strategy deck).
+- Regression: Same questions after re-ingest should not collapse grounding scores without explanation.
+- Failure modes: Test off-topic prompt (guardrails), empty index path, and missing API key paths if applicable.
+
+E. Observability
+----------------
+- Enable Langfuse for a sample run; confirm traces show graph nodes and tool calls.
+- Capture latency and token usage for budgeting; note model name in config for reproducibility.
+
+F. Reporting artifacts
+------------------------
+- Confirm reports/ receives HTML output and viz_assets_* when analysis step succeeds.
+- If visualization codegen fails after retries, log stderr and file a ticket with the broken script excerpt (no secrets).
+
+G. Security and hygiene (POC)
+-----------------------------
+- Do not commit API keys or .env; use .env.example for placeholders only.
+- Treat ingested filings as sensitive business data; restrict repo and runtime access accordingly.
+
+H. Handoff
+----------
+- Document corpus version (list of filenames + ingest date) in your demo README or runbook.
+- Note known gaps: e.g., FY24 Q4 10-Q if not present in corpus, or web-only facts not in PDFs.

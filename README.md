@@ -37,12 +37,12 @@ A **LangGraph**-based leadership assistant that answers business questions using
 .
 ├── streamlit_app.py             # Streamlit UI (sidebar keys, HTML preview)
 ├── main.py                      # CLI entrypoint
-├── ingest.py                    # Build / refresh Chroma index from PDFs
+├── ingest.py                    # Build / refresh Chroma index from PDFs + *.txt
 ├── leadership_agent_config.json # Model, RAG, API keys, paths, Langfuse
 ├── requirements.txt
 ├── .env.example                 # Optional env overrides (keys, Langfuse)
 ├── data/
-│   └── documents/               # Place *.pdf files here before ingest
+│   └── documents/               # Place *.pdf and *.txt here before ingest
 ├── vectorstore_db/              # Chroma persistence (created by ingest)
 ├── memory_db/                   # LangGraph SQLite checkpoints (session threads)
 ├── reports/                     # HTML reports + viz_assets_* chart folders
@@ -58,7 +58,7 @@ A **LangGraph**-based leadership assistant that answers business questions using
     │   ├── analysis_runner.py   # LLM codegen + subprocess for charts
     │   └── html_report.py       # Single-file HTML report writer
     ├── ingestion/
-    │   ├── document_loader.py   # PyMuPDF → LangChain Documents (+ page metadata)
+    │   ├── document_loader.py   # PyMuPDF (PDF) + UTF-8 *.txt → LangChain Documents
     │   └── chunker.py           # RecursiveCharacterTextSplitter
     ├── utils/
     │   ├── config.py            # Load & validate JSON config
@@ -183,7 +183,7 @@ Secrets can also be supplied via **environment variables** (see `src/utils/confi
 
 ## Ingest documents (build the vector store)
 
-1. Put PDFs in **`data/documents/`** (e.g. 10-K, earnings PDFs).
+1. Put PDFs and optional **`.txt`** notes in **`data/documents/`** (e.g. 10-K, earnings PDFs, strategy notes).
 
 2. Run:
 
@@ -192,11 +192,11 @@ Secrets can also be supplied via **environment variables** (see `src/utils/confi
    ```
 
 3. This will:
-   - Load PDFs with **PyMuPDF** (text per page, `source` + `page` in metadata),
+   - Load **PDFs** with **PyMuPDF** (text per page, `source` + `page` in metadata) and **`.txt`** files (whole file, `page` omitted),
    - Chunk with **`RecursiveCharacterTextSplitter`** (`chunk_size` / `chunk_overlap` from config),
    - Embed with **sentence-transformers** and persist **Chroma** under **`vectorstore_db/`**.
 
-**Re-run ingest** after adding/removing PDFs or changing embedding / chunk settings.
+**Re-run ingest** after adding/removing documents or changing embedding / chunk settings.
 
 ---
 

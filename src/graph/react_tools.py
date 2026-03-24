@@ -22,7 +22,8 @@ def make_react_tools(cfg: LeadershipAgentConfig, project_root: Path) -> List:
     @tool
     def rag_search(query: str) -> str:
         """Search internal company documents (reports, strategy, ops) via semantic retrieval + optional Cohere rerank.
-        Use for performance, financials, strategy, operations, risks. Returns grounded passages with source paths."""
+        Use for performance, financials, strategy, operations, risks. Returns grounded passages with source paths.
+        If the user asks to compare years/periods and retrieved chunks omit a period, call web_search next—do not stop at partial RAG alone."""
         print("[tool] rag_search", flush=True)
         try:
             vs = load_vectorstore(cfg)
@@ -74,7 +75,9 @@ def make_react_tools(cfg: LeadershipAgentConfig, project_root: Path) -> List:
 
     @tool
     def web_search(query: str) -> str:
-        """Search the web for current market data, news, benchmarks, or context not in internal documents."""
+        """Search the web for facts missing from internal RAG: news, benchmarks, and **multi-year or multi-period Adobe financials**
+        (e.g. revenue, segments, risks) when comparing fiscal years or quarters across time. Use for SEC EDGAR / investor.adobe.com
+        summaries, recent 10-K/10-Q figures, or analyst recap pages. Required for comparative analysis if the vector store lacks a year."""
         print("[tool] web_search", flush=True)
         key = cfg.web_search_api_key()
         if not cfg.web_search.enabled or not key:
