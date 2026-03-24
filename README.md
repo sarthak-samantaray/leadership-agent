@@ -35,6 +35,7 @@ A **LangGraph**-based leadership assistant that answers business questions using
 
 ```
 .
+├── streamlit_app.py             # Streamlit UI (sidebar keys, HTML preview)
 ├── main.py                      # CLI entrypoint
 ├── ingest.py                    # Build / refresh Chroma index from PDFs
 ├── leadership_agent_config.json # Model, RAG, API keys, paths, Langfuse
@@ -115,6 +116,8 @@ flowchart TD
 | **finalize** | Merges tool outputs into `merged_context`, extracts final assistant text into `final_answer`. |
 | **analysis_agent** | Second LLM pass generates **Python** that plots data; runs in isolated temp dir; PNGs copied under `reports/viz_assets_*`. |
 | **html_report** | Writes `reports/leadership_report_<timestamp>.html` with answer, figures, and parsed `[SOURCE …]` / `[WEB SOURCE …]` lines. |
+
+**Visualization codegen retries (`src/graph/analysis_runner.py`):** Before running the script in a subprocess, the code is compiled with `compile()`. If that raises **`SyntaxError`**, the pipeline **retries up to 3 times** (`_VIZ_COMPILE_RETRIES`): each retry sends the model the compile error plus the broken script and asks for a complete fix. Empty codegen from the model is retried the same way. If all attempts still fail syntax checks, no subprocess runs and stderr reports `Syntax error after 3 attempts: …`. Logs may show `viz SyntaxError attempt N` while this happens.
 
 **Why this order?** Guardrails before tools avoids wasted retrieval and cost. ReAct is standard for tool-using agents. **Finalize** separates “model answer” from raw tool dumps. **Analysis** runs after the answer so charts can use retrieved numbers + summary. **HTML** last so one artifact bundles narrative, charts, and citations.
 
@@ -220,6 +223,18 @@ python main.py
 - Type a **leadership question** at the prompt; type `exit` to quit.
 - Answers print to the terminal; **HTML report** path is appended when generation succeeds.
 - **Thread ID** is printed once per session (SQLite checkpointer under `memory_db/` for conversational state).
+
+### Streamlit UI (recommended for demos)
+
+```bash
+streamlit run streamlit_app.py
+```
+
+- **Sidebar:** set **Gemini** key/model, **Tavily**, **Cohere** (rerank on/off), and **Langfuse** (on/off + keys + URL). Values apply for the current browser session only (defaults load from `leadership_agent_config.json` / `.env` if you leave a field blank).
+- **Main:** enter a question, run the full graph, read the Markdown answer.
+- **Report:** **Download** the generated HTML, **Open file in browser** (uses a `file://` link — works locally), and an embedded **preview** of the report (chart images are fixed to absolute paths for the iframe).
+
+Theme and fonts are in `.streamlit/config.toml`.
 
 ---
 

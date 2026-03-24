@@ -22,3 +22,4 @@ sentence-transformers>=3.0.0
 langchain-huggingface>=0.1.0
 langfuse>=2.0.0
 cohere>=5.0.0
+streamlit>=1.28.0
