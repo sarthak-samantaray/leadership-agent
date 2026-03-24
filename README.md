@@ -151,7 +151,7 @@ So: embeddings + MMR = broad, non-redundant candidate set; **rerank** = better o
 ## Setup
 
 ```
-NOTE : THE DOCUMENTS ARE ALREADY -- YOU CAN START THE DEMO DIRECTLY BY SETTING UP THE API KEYS.
+NOTE : THE DOCUMENTS ARE ALREADY LOADED! -- YOU CAN START THE DEMO DIRECTLY BY SETTING UP THE API KEYS.
 ```
 
 ### 1. Clone and virtualenv
