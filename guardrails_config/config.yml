@@ -1,0 +1,7 @@
+# Placeholder for NeMo Guardrails (architecture). This POC uses rule-based guardrails in code.
+models: []
+rails:
+  input:
+    flows: []
+  output:
+    flows: []

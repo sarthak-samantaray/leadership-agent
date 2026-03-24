@@ -1,0 +1,4 @@
+.env.example
+temp-env/
+__pycache__/
+reports/

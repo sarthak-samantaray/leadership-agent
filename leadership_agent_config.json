@@ -1,0 +1,52 @@
+{
+  "_source": "Re-run ingest after changing embeddings.model_name.",
+  "paths": {
+    "documents_dir": "data/documents",
+    "vectorstore_dir": "vectorstore_db",
+    "memory_db": "memory_db/checkpoints.db",
+    "reports_dir": "reports",
+    "unified_report_template": "templates/unified_report.html",
+    "guardrails_config": "guardrails_config/config.yml"
+  },
+  "llm": {
+    "api_key": "",
+    "model": "gemini-2.5-flash-lite",
+    "timeout_seconds": 80,
+    "max_tokens": 4096,
+    "temperature": 0,
+    "top_p": 0.95
+  },
+  "embeddings": {
+    "model_name": "sentence-transformers/all-MiniLM-L6-v2",
+    "device": "cpu"
+  },
+  "web_search": {
+    "enabled": true,
+    "provider": "tavily",
+    "api_key": "",
+    "api_key_env": "TAVILY_API_KEY",
+    "max_results": 5
+  },
+  "rag": {
+    "chunk_size": 800,
+    "chunk_overlap": 100,
+    "mmr_k": 5,
+    "mmr_fetch_k": 20,
+    "cohere": {
+      "enabled": true,
+      "model": "rerank-english-v3.0",
+      "api_key": "",
+      "api_key_env": ""
+    }
+  },
+  "langfuse": {
+    "enabled": true,
+    "secret_key": "",
+    "public_key": "",
+    "base_url": "https://us.cloud.langfuse.com"
+  },
+  "react_agent": {
+    "_note": "max_tool_rounds ≈ ReAct cycles; optional recursion_limit overrides LangGraph step cap (min 4, max 64).",
+    "max_tool_rounds": 5
+  }
+}

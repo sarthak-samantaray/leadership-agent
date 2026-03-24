@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ title }}</title>
+  <style>
+    :root { --ink: #1a1d26; --muted: #5c6370; --accent: #c41e3a; --bg: #faf9f7; }
+    body { font-family: "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--ink); margin: 0; line-height: 1.55; }
+    header { background: linear-gradient(135deg, #1a1d26 0%, #2d3142 100%); color: #f4f1ea; padding: 2rem 1.5rem 1.75rem; }
+    header h1 { font-size: 1.35rem; font-weight: 600; margin: 0 0 0.5rem; letter-spacing: -0.02em; }
+    header .meta { font-size: 0.85rem; opacity: 0.85; }
+    header .why { font-size: 0.8rem; opacity: 0.75; margin-top: 0.75rem; max-width: 720px; }
+    main { max-width: 920px; margin: 0 auto; padding: 1.75rem 1.25rem 3rem; }
+    section { margin-bottom: 2.25rem; }
+    section h2 { font-size: 1.05rem; color: var(--accent); border-bottom: 1px solid #e2e0dc; padding-bottom: 0.35rem; margin-bottom: 0.85rem; }
+    .narrative { font-size: 1.02rem; }
+    .narrative h1 { font-size: 1.25rem; margin: 1.25rem 0 0.5rem; }
+    .narrative h2 { font-size: 1.1rem; margin: 1.1rem 0 0.45rem; border: none; padding: 0; color: var(--ink); }
+    .narrative h3 { font-size: 1.02rem; margin: 1rem 0 0.4rem; }
+    .narrative p { margin: 0.65rem 0; }
+    .narrative ul, .narrative ol { margin: 0.5rem 0 0.75rem 1.25rem; }
+    .narrative li { margin: 0.25rem 0; }
+    .narrative blockquote { margin: 0.75rem 0; padding: 0.5rem 1rem; border-left: 4px solid #c41e3a; background: #fff; color: var(--muted); }
+    .narrative code { font-family: ui-monospace, monospace; font-size: 0.88em; background: #f0eeea; padding: 0.12em 0.35em; border-radius: 4px; }
+    .narrative pre { background: #1e222a; color: #e8e6e1; padding: 1rem; border-radius: 8px; overflow-x: auto; font-size: 0.82rem; line-height: 1.45; }
+    .narrative pre code { background: transparent; padding: 0; color: inherit; }
+    .narrative table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
+    .narrative th, .narrative td { border: 1px solid #e2e0dc; padding: 0.45rem 0.65rem; text-align: left; }
+    .narrative th { background: #f4f2ee; }
+    .sources-md { font-size: 0.95rem; }
+    .sources-md ul { margin: 0.35rem 0 0.5rem 1.25rem; }
+    .log-block { font-size: 0.88rem; color: var(--muted); background: #fff; border: 1px solid #e8e6e1; border-radius: 6px; padding: 1rem; overflow-x: auto; }
+    .log-block pre { margin: 0; background: #1e222a; color: #e8e6e1; padding: 1rem; border-radius: 6px; font-size: 0.82rem; }
+    .log.err { border-color: #f0c4c4; background: #fff8f8; color: #8b2942; }
+    .charts { display: grid; gap: 1.5rem; }
+    @media (min-width: 640px) { .charts { grid-template-columns: 1fr 1fr; } }
+    figure { margin: 0; background: #fff; border: 1px solid #e8e6e1; border-radius: 8px; padding: 0.75rem; box-shadow: 0 4px 14px rgba(0,0,0,0.04); }
+    figure img { width: 100%; height: auto; display: block; border-radius: 4px; }
+    figcaption { font-size: 0.78rem; color: var(--muted); margin-top: 0.5rem; text-align: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>{{ title }}</h1>
+    <p class="meta">Generated {{ timestamp }}</p>
+    {% if supervisor_rationale %}
+    <p class="why">Routing: {{ supervisor_rationale }}</p>
+    {% endif %}
+  </header>
+  <main>
+    <section>
+      <h2>Summary</h2>
+      <div class="narrative">{{ narrative | safe }}</div>
+    </section>
+    {% if sources_html %}
+    <section>
+      <h2>Sources</h2>
+      <div class="sources-md">{{ sources_html | safe }}</div>
+    </section>
+    {% endif %}
+    {% if images %}
+    <section>
+      <h2>Charts &amp; analysis plots</h2>
+      <div class="charts">
+        {% for img in images %}
+        <figure>
+          <img src="{{ img.src }}" alt="{{ img.caption }}" />
+          <figcaption>{{ img.caption }}</figcaption>
+        </figure>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+    {% if analysis_stdout %}
+    <section>
+      <h2>Analysis log</h2>
+      <div class="log-block">{{ analysis_stdout | safe }}</div>
+    </section>
+    {% endif %}
+    {% if analysis_stderr %}
+    <section>
+      <h2>Analysis diagnostics</h2>
+      <div class="log err log-block">{{ analysis_stderr | safe }}</div>
+    </section>
+    {% endif %}
+  </main>
+</body>
+</html>
