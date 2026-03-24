@@ -1,0 +1,23 @@
+langgraph>=0.2.0
+langgraph-checkpoint-sqlite>=2.0.0
+langchain>=0.2.0
+langchain-openai
+langchain-community
+langchain-text-splitters
+chromadb>=0.5.0
+# Py3.12+: older multiprocess ResourceTracker.__del__ touches RLock._recursion_count (removed in 3.12)
+multiprocess>=0.70.19
+pymupdf
+tavily-python
+pandas
+matplotlib
+seaborn
+jinja2
+markdown>=3.5
+python-dotenv
+pydantic>=2.0
+typing_extensions>=4.0.0
+sentence-transformers>=3.0.0
+langchain-huggingface>=0.1.0
+langfuse>=2.0.0
+cohere>=5.0.0
