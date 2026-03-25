@@ -9,7 +9,7 @@
     "guardrails_config": "guardrails_config/config.yml"
   },
   "llm": {
-    "api_key": "",
+    "api_key": "GEMINI API KEY",
     "model": "gemini-2.5-flash-lite",
     "timeout_seconds": 80,
     "max_tokens": 4096,
@@ -23,7 +23,7 @@
   "web_search": {
     "enabled": true,
     "provider": "tavily",
-    "api_key": "",
+    "api_key": "TAVILY_API_KEY",
     "api_key_env": "TAVILY_API_KEY",
     "max_results": 5
   },
@@ -35,14 +35,14 @@
     "cohere": {
       "enabled": true,
       "model": "rerank-english-v3.0",
-      "api_key": "",
-      "api_key_env": ""
+      "api_key": "COHERE_API_KEY",
+      "api_key_env": "COHERE_API_KEY"
     }
   },
   "langfuse": {
     "enabled": true,
-    "secret_key": "",
-    "public_key": "",
+    "secret_key": "SECRET_KEY",
+    "public_key": "PUBLIC KEY",
     "base_url": "https://us.cloud.langfuse.com"
   },
   "react_agent": {
