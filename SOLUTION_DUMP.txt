@@ -1,0 +1,186 @@
+================================================================================
+ADOBE LEADERSHIP AGENT — SOLUTION DUMP
+================================================================================
+
+--------------------------------------------------------------------------------
+1. PURPOSE
+--------------------------------------------------------------------------------
+Executive-style Q&A over ingested company documents (PDF + UTF-8 .txt) with:
+  - LangGraph orchestration (guardrails → ReAct agent with tools → finalize →
+    Python chart generation → HTML report)
+  - Semantic retrieval (Chroma + sentence-transformers embeddings) with optional
+    Cohere Rerank after MMR fetch
+  - Optional Tavily web search for facts not in corpus or for multi-period /
+    comparative questions
+  - Optional Langfuse tracing (callbacks on invoke)
+
+Primary LLM: Google Gemini via langchain-google-genai (ChatGoogleGenerativeAI).
+
+--------------------------------------------------------------------------------
+2. ENTRY POINTS
+--------------------------------------------------------------------------------
+  main.py              CLI loop: read question, graph.invoke, print answer + HTML path
+  streamlit_app.py     Sidebar API keys, Run agent, session state for last result,
+                       HTML preview (inline images in iframe), download/open
+                       browser for report
+  ingest.py            Build/refresh Chroma from data/documents (PDFs + *.txt)
+
+Config: leadership_agent_config.json (Pydantic LeadershipAgentConfig)
+Env:    .env (optional overrides; keys often mirrored in JSON)
+
+--------------------------------------------------------------------------------
+3. LANGGRAPH PIPELINE (builder.py)
+--------------------------------------------------------------------------------
+Order of nodes (linear after guardrails):
+
+  rule_guardrail     → heuristic checks (rule_guardrails.py); may set is_safe=false
+  prompt_guardrail  → Gemini + structured PromptGuardrailVerdict (schemas.py)
+  agent             → Gemini with tools; system prompt LEADERSHIP_AGENT_SYSTEM
+  tools             → execute rag_search / web_search; append ToolMessages
+  (loop)            → agent ↔ tools while tool_calls and tool_call_count < max_tool_rounds
+  finalize          → merged_context from ToolMessages; final_answer from last AIMessage
+                      without tool_calls (or fallback)
+  analysis_agent    → LLM-generated matplotlib/seaborn script in subprocess;
+                      PNGs under reports/ (analysis_runner.py)
+  html_report       → HTML file under reports/leadership_report_<timestamp>.html
+
+Checkpointing: SqliteSaver on memory_db path (thread_id in config for sessions).
+
+Edges:
+  rule_guardrail → prompt_guardrail | END
+  prompt_guardrail → agent | END
+  agent → tools | finalize
+  tools → agent
+  finalize → analysis_agent → html_report → END
+
+recursion_limit: max(48, max_tool_rounds*4+24) typical in CLI/streamlit invoke.
+
+--------------------------------------------------------------------------------
+4. AGENT STATE (state.py)
+--------------------------------------------------------------------------------
+Key fields:
+  messages            — LangChain messages (add_messages reducer)
+  question / user_query
+  tool_call_count     — caps ReAct loops vs max_tool_rounds
+  rag_sources / web_sources — accumulated source labels from tool output
+  merged_context      — concatenated tool outputs for viz + HTML
+  final_answer
+  analysis_*          — stdout/stderr, list of PNG paths
+  html_report_path
+  is_safe / error_message
+
+--------------------------------------------------------------------------------
+5. TOOLS (react_tools.py)
+--------------------------------------------------------------------------------
+rag_search(query)
+  - load_vectorstore(cfg) → Chroma
+  - max_marginal_relevance_search with query string from the model (no separate
+    server-side query rewrite)
+  - If Cohere enabled + key: larger fetch_k then cohere_rerank_documents(query, docs)
+  - Returns formatted chunks with [SOURCE i: filename · page N]
+
+web_search(query)
+  - TavilyClient.search if enabled and API key present
+  - Returns optional answer + [WEB SOURCE i: url] blocks
+
+There is no dedicated pipeline that rewrites the user question into a second
+retrieval query; the model chooses rag_search/web_search arguments when calling tools.
+
+--------------------------------------------------------------------------------
+6. INGESTION & RAG INDEX
+--------------------------------------------------------------------------------
+document_loader.py
+  - *.pdf: PyMuPDF per-page text, metadata source, page
+  - *.txt: whole file UTF-8, metadata source, page=None
+
+chunker.py
+  - RecursiveCharacterTextSplitter(chunk_size/overlap from config)
+
+store_manager.py
+  - HuggingFaceEmbeddings(normalize_embeddings=True)
+  - Chroma.from_documents for ingest; Chroma load on demand with cache + lock
+
+ingest.py
+  - load_documents_from_directory → chunk → build_vectorstore (replaces/writes persist dir)
+
+--------------------------------------------------------------------------------
+7. GUARDRAILS
+--------------------------------------------------------------------------------
+rule_guardrails.py   — Substring/heuristic blocks (injection phrases, obvious junk).
+prompt_guardrails    — LLM classifier with PROMPT_GUARDRAIL_SYSTEM; allowed flag.
+
+--------------------------------------------------------------------------------
+8. VISUALIZATION (analysis_runner.py)
+--------------------------------------------------------------------------------
+- LLM generates Python; compile() before subprocess; forbidden patterns blocked.
+- On SyntaxError or empty codegen: up to _VIZ_COMPILE_RETRIES (3) with error fed back.
+- Subprocess runs matplotlib Agg; writes PNGs; paths returned for HTML embedding.
+
+--------------------------------------------------------------------------------
+9. HTML REPORT (html_report.py)
+--------------------------------------------------------------------------------
+- Markdown render of final_answer; copies figures; extracts [SOURCE]/[WEB SOURCE]
+  lines from merged_context for a references section.
+- Timestamped file under reports_dir.
+
+--------------------------------------------------------------------------------
+10. OBSERVABILITY
+--------------------------------------------------------------------------------
+observability.py — Langfuse callbacks when enabled and keys present.
+
+--------------------------------------------------------------------------------
+11. CONFIGURATION (leadership_agent_config.json)
+--------------------------------------------------------------------------------
+Typical sections:
+  paths.*          — documents_dir, vectorstore_dir, memory_db, reports_dir
+  llm.*            — Gemini model, temperature, tokens, timeout
+  embeddings.*     — sentence-transformers model name, device
+  web_search.*     — Tavily enabled, max_results, api_key / env
+  rag.*            — chunk_size, overlap, mmr_k, mmr_fetch_k, cohere.*
+  langfuse.*       — enabled, keys, base_url
+  react_agent.*    — max_tool_rounds (and optional recursion_limit)
+
+--------------------------------------------------------------------------------
+12. PYTHON MODULE INDEX (src/)
+--------------------------------------------------------------------------------
+graph/
+  builder.py          — graph definition, all nodes
+  state.py              — AgentState TypedDict
+  react_tools.py        — RAG + Tavily tools
+  rule_guardrails.py    — rule-based gate
+  schemas.py            — PromptGuardrailVerdict
+  analysis_runner.py    — viz codegen + subprocess
+  html_report.py        — HTML writer
+
+ingestion/
+  document_loader.py    — PDF + txt → Documents
+  chunker.py            — text split
+
+vectorstore/
+  store_manager.py      — Chroma build/load
+  cohere_rerank.py      — Cohere API wrapper
+
+utils/
+  config.py             — LeadershipAgentConfig
+  prompts.py            — system prompts (agent, guardrail, viz)
+  llm_factory.py        — Gemini chat model
+  observability.py      — Langfuse
+  runtime_bootstrap.py  — env/bootstrap
+  logger.py, message_content.py
+
+--------------------------------------------------------------------------------
+13. DEPENDENCIES (requirements.txt)
+--------------------------------------------------------------------------------
+langgraph, langgraph-checkpoint-sqlite, langchain, langchain-google-genai,
+langchain-community, chromadb, pymupdf, tavily-python, streamlit,
+sentence-transformers, langchain-huggingface, cohere, langfuse, pandas,
+matplotlib, seaborn, markdown, pydantic, python-dotenv, dotenv, etc.
+
+--------------------------------------------------------------------------------
+14. OPERATIONAL NOTES
+--------------------------------------------------------------------------------
+- Run ingest after adding/removing documents under data/documents/.
+- Vector store and SQLite checkpoints are local artifacts; decide whether to
+  gitignore or regenerate in CI.
+- Web search requires Tavily (or tool returns disabled message).
+- Streamlit HTML preview embeds images as data URLs to avoid file:// iframe blocks.
